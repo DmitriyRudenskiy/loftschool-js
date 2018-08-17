@@ -43,10 +43,56 @@ const addButton = homeworkContainer.querySelector('#add-button');
 // таблица со списком cookie
 const listTable = homeworkContainer.querySelector('#list-table tbody');
 
+function isMatching(full, chunk) {
+    return full.toUpperCase().indexOf(chunk.toUpperCase()) > -1;
+}
+
+function getCookies() {
+    return document.cookie
+        .split('; ')
+        .filter(Boolean)
+        .map(cookie => cookie.match(/^([^=]+)=(.+)/))
+        .reduce((obj, [, name, value]) => {
+            obj[name] = value;
+
+            return obj;
+        }, {});
+}
+
+function bulderTable() {
+    const cookies = getCookies();
+
+    listTable.innerHTML = null;
+
+    for (let item in cookies) {
+        if (cookies.hasOwnProperty(item) &&(!filterNameInput.value
+            || isMatching(item, filterNameInput.value)
+            || isMatching(cookies[item], filterNameInput.value))) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${item}</td><td>${cookies[item]}</td><td><button>удалить</button></td>`
+
+            tr.querySelector('button').addEventListener('click', () => {
+                tr.remove();
+                document.cookie = `${item} = ${cookies[item]};expires=${new Date(-1)}`;
+
+                bulderTable();
+            });
+
+            listTable.appendChild(tr);
+        }
+    }
+}
+
 filterNameInput.addEventListener('keyup', function() {
     // здесь можно обработать нажатия на клавиши внутри текстового поля для фильтрации cookie
+    bulderTable();
 });
 
 addButton.addEventListener('click', () => {
     // здесь можно обработать нажатие на кнопку "добавить cookie"
+    document.cookie = `${addNameInput.value} = ${addValueInput.value}`;
+
+    bulderTable();
 });
+
+bulderTable();
